@@ -65,3 +65,14 @@ Technoblade: 胜 0 | 回合 43波 | KD 518.0 | 存活 43 | 命中 73.2%
 - 命中率、最快波次时间依赖账号是否有对应字段（部分玩家数据缺失时显示 `-`）
 - 聚合字段（如 `best_round_zombies_deadend`）偶尔不同步，优先展示难度细分数据
 - 中文显示需要 CJK 字体资源包（原版字体不含中文字形）
+
+## 开发声明
+
+本模组由 **AI 助手（DeepSeek）** 在用户需求驱动下完成开发，包括：
+
+- 项目骨架搭建与 Gradle/Loom 构建配置（含国内镜像源适配）
+- Hypixel API 数据解析与批量查询逻辑
+- MC 26.1.2 新 API 适配（通过字节码反编译逐一确认：`ClientCommands`、`getListedOnlinePlayers()`、`GameProfile.name()`、§ 代码渲染移除等）
+- 编译验证、错误排查与版本迭代
+
+仓库同步包含两个 PowerShell 查询脚本（`hypixel-arcade.ps1` / `hypixel-zombies.ps1`），同样由 AI 完成。
