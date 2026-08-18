@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "zbmod",
+  "version": "${version}",
+  "name": "Zombies Stats",
+  "description": "在游戏中查询 Hypixel Arcade Zombies 战绩（客户端命令，无 GUI）",
+  "authors": [
+    "jvav1145"
+  ],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.zbmod.ZbModClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "fabric-api": "*",
+    "minecraft": "~26.1.2",
+    "java": ">=25"
+  }
+}
