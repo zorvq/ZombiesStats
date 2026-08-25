@@ -14,8 +14,8 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 /**
  * 客户端命令注册（无 GUI，纯聊天栏输出）：
@@ -141,7 +141,7 @@ public final class ZbCommands {
 
     /**
      * /zombies all 或 /zb all：批量查询当前在线玩家（Tab 列表）。
-     * 串行请求（600ms 间隔防限速），结果按 15 行一块输出到聊天栏。
+     * 3 worker 线程并发 + 全局限速（防 429），结果按 Tab 列表原顺序分块输出到聊天栏。
      */
     private static int queryAll(FabricClientCommandSource source) {
         String key = ApiKeyStore.get();
@@ -168,16 +168,17 @@ public final class ZbCommands {
         }
 
         feedback(source, "§7正在批量查询 §e" + names.size()
-                + " §7名在线玩家（约 " + Math.max(1, names.size() * 600 / 1000) + " 秒）...");
+                + " §7名在线玩家（约 " + Math.max(1, names.size() * HypixelApi.slotMillis() / 1000) + " 秒）...");
 
-        List<String> results = new CopyOnWriteArrayList<>();
+        // 按原始顺序保存结果
+        AtomicReferenceArray<String> ordered = new AtomicReferenceArray<>(names.size());
         AtomicInteger success = new AtomicInteger();
         AtomicInteger fail = new AtomicInteger();
 
         HypixelApi.queryManyAsync(names, key, new HypixelApi.ManyCallback() {
             @Override
-            public void onResult(String playerName, String line) {
-                results.add("§e" + playerName + "§7: " + line);
+            public void onResult(int index, String playerName, String line) {
+                ordered.set(index, "§e" + playerName + "§7: " + line);
                 if (line.startsWith("§a")) {
                     success.incrementAndGet();
                 } else {
@@ -200,7 +201,14 @@ public final class ZbCommands {
 
             @Override
             public void onAllDone() {
-                // 每 15 行一块发送，避免单条消息过长
+                // 按原顺序拼接，每 15 行一块发送，避免单条消息过长
+                List<String> results = new ArrayList<>();
+                for (int i = 0; i < ordered.length(); i++) {
+                    String line = ordered.get(i);
+                    if (line != null) {
+                        results.add(line);
+                    }
+                }
                 for (int i = 0; i < results.size(); i += 15) {
                     feedback(source, String.join("\n",
                             results.subList(i, Math.min(i + 15, results.size()))));
